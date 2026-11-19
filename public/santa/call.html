@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Live Call with Santa Claus — Official North Pole Connection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Great+Vibes&family=Inter:wght@400;600;700;800&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAQ7Qe0hOt6TkNQn55-BZ0q1axfnPXEtzS6IRo0oZ2aoZ9Hj432uW0pzp-hjxQ_TCIZObuWAEyXpwAMDc&currency=USD&components=buttons&enable-funding=card"></script>
+  <style>
+    :root {
+      --bg: #060c1c;
+      --card: #0d172e;
+      --gold: #f5c451;
+      --gold-dark: #b8860b;
+      --crimson: #c41e3a;
+      --text: #ffffff;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, select, textarea, button {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      touch-action: manipulation;
+    }
+    button {
+      cursor: pointer;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+    img {
+      -webkit-user-drag: none;
+      user-drag: none;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .call-wrap {
+      max-width: 900px; margin: 0 auto; width: 100%; flex: 1;
+      padding: 16px; display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* Ringing Screen */
+    #ringingScreen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      flex: 1; text-align: center; padding: 40px 20px;
+    }
+    .ring-avatar {
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 4px solid var(--gold); overflow: hidden; margin-bottom: 20px;
+      box-shadow: 0 0 30px rgba(245, 196, 81, 0.4);
+      animation: pulseRing 1.5s infinite;
+    }
+    @keyframes pulseRing {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(245, 196, 81, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(196, 30, 58, 0.7); }
+    }
+    .ring-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .caller-id { font-family: 'Cinzel', serif; font-size: 26px; color: var(--gold); margin-bottom: 6px; }
+    .call-status { font-size: 14px; color: var(--muted); margin-bottom: 30px; }
+    .btn-answer {
+      background: #15803d; color: #fff; font-size: 18px; font-weight: 800;
+      padding: 16px 36px; border-radius: 999px; border: none; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(21, 128, 61, 0.5);
+      display: inline-flex; align-items: center; gap: 10px;
+      animation: bounce 1s infinite alternate;
+    }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+
+    /* Active Call Screen */
+    #activeScreen {
+      display: none; width: 100%; flex-direction: column; align-items: center;
+    }
+    #activeScreen.active { display: flex; }
+
+    .video-frame {
+      width: 100%; max-width: 600px; height: 420px; border-radius: 20px;
+      border: 3px solid rgba(245, 196, 81, 0.5); position: relative;
+      overflow: hidden; background: #000; box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+    }
+    @media (max-width: 640px) { .video-frame { height: 350px; } }
+
+    .santa-portrait-live {
+      width: 100%; height: 100%; object-fit: cover; object-position: top center;
+    }
+
+    /* Animated Mouth overlay */
+    .santa-mouth {
+      position: absolute; bottom: 27%; left: 47%; width: 34px; height: 16px;
+      background: #4a0404; border-radius: 50%; opacity: 0;
+      transition: height 0.08s, opacity 0.08s;
+      transform: translateX(-50%);
+    }
+    .santa-mouth.talking {
+      opacity: 0.85; animation: mouthMove 0.22s infinite alternate;
+    }
+    @keyframes mouthMove {
+      from { height: 8px; border-radius: 30%; }
+      to { height: 22px; border-radius: 50%; }
+    }
+
+    .call-bar-top {
+      position: absolute; top: 12px; left: 14px; right: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+      padding: 6px 12px; border-radius: 10px; font-size: 12px;
+    }
+    .timer { font-family: monospace; font-size: 15px; font-weight: 700; color: var(--gold); }
+
+    .call-bar-bot {
+      position: absolute; bottom: 12px; left: 14px; right: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      padding: 10px 14px; border-radius: 12px;
+    }
+
+    .speech-bubble {
+      margin-top: 16px; max-width: 600px; width: 100%;
+      background: rgba(16, 26, 52, 0.9); border: 1px solid var(--gold);
+      border-radius: 14px; padding: 14px 18px; text-align: center;
+      font-size: 15px; color: #fff; min-height: 58px;
+    }
+
+    .chip-btn {
+      background: rgba(245, 196, 81, 0.12);
+      border: 1px solid rgba(245, 196, 81, 0.5);
+      color: #fff;
+      padding: 9px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      touch-action: manipulation;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .chip-btn:hover, .chip-btn:active {
+      background: var(--gold);
+      color: #070d1e;
+      border-color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 196, 81, 0.4);
+    }
+
+    .mic-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #4ade80; font-weight: 600;
+    }
+
+    .btn-end {
+      background: var(--crimson); color: #fff; border: none; padding: 8px 16px;
+      border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px;
+    }
+
+    /* Golden Book Alert */
+    .golden-book-toast {
+      background: linear-gradient(135deg, #f5c451 0%, #d97706 100%);
+      color: #070d1e; font-weight: 800; font-size: 13px;
+      padding: 8px 16px; border-radius: 20px; margin-top: 10px;
+      box-shadow: 0 4px 14px rgba(245, 196, 81, 0.4);
+      display: none; align-items: center; gap: 8px;
+    }
+
+    /* Post-Call Certificate Screen */
+    #certificateScreen {
+      display: none; width: 100%; max-width: 660px;
+      flex-direction: column; align-items: center; text-align: center;
+      padding: 20px 0;
+    }
+    #certificateScreen.active { display: flex; }
+
+    .cert-canvas-wrap {
+      width: 100%; margin: 16px 0; border: 3px solid var(--gold);
+      border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      background: #fff;
+    }
+    canvas#certCanvas { width: 100%; height: auto; display: block; }
+
+    .cert-actions {
+      display: flex; gap: 10px; width: 100%; flex-wrap: wrap; justify-content: center;
+      margin-top: 14px;
+    }
+    .btn-download {
+      background: #15803d; color: #fff; padding: 14px 22px; border-radius: 10px;
+      font-weight: 800; border: none; cursor: pointer; font-size: 15px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-share {
+      background: #2563eb; color: #fff; padding: 14px 22px; border-radius: 10px;
+      font-weight: 800; border: none; cursor: pointer; font-size: 15px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="call-wrap">
+    <!-- Screen 1: Incoming Ringing -->
+    <div id="ringingScreen">
+      <div class="ring-avatar">
+        <img src="/santa/assets/santa-cinematic.png" alt="Santa Claus" />
+      </div>
+      <div class="caller-id">🎅 SANTA CLAUS</div>
+      <div class="call-status">North Pole Workshop · Encrypted Satellite Hotline</div>
+      <button type="button" class="btn-answer" id="answerBtn">
+        📞 Answer Call from Santa
+      </button>
+      <p style="margin-top:16px;font-size:12px;color:var(--muted)">
+        Please enable your microphone so Santa can hear your child!
+      </p>
+    </div>
+
+    <!-- Screen 2: Active Call -->
+    <div id="activeScreen">
+      <div class="video-frame">
+        <img src="/santa/assets/santa-cinematic.png" alt="Santa" class="santa-portrait-live" />
+        <div class="santa-mouth" id="santaMouth"></div>
+
+        <div class="call-bar-top">
+          <span>🎄 North Pole Live Feed</span>
+          <span class="timer" id="callTimer">02:00</span>
+        </div>
+
+        <div class="call-bar-bot">
+          <div class="mic-status" id="micStatus">
+            🎙️ Santa is listening...
+          </div>
+          <button type="button" class="btn-end" id="endCallBtn">End Call</button>
+        </div>
+      </div>
+
+      <div class="golden-book-toast" id="goldenToast">
+        📖 <span id="goldenName">Child</span> has been officially recorded in Santa's Golden Book!
+      </div>
+
+      <div class="speech-bubble" id="speechBubble">
+        Connecting to Santa...
+      </div>
+
+      <!-- Quick Interactive Answer Chips & Voice Feedback -->
+      <div id="quickAnswers" style="display:none;margin-top:14px;gap:8px;flex-wrap:wrap;justify-content:center;max-width:600px;width:100%;"></div>
+    </div>
+
+    <!-- Screen 3: Official Certificate -->
+    <div id="certificateScreen">
+      <h2 style="font-family:'Cinzel',serif;font-size:26px;color:var(--gold);margin-bottom:6px;">
+        🎉 Congratulations!
+      </h2>
+      <p style="color:var(--muted);font-size:14px;">
+        Santa has officially placed <strong id="certChildName" style="color:#fff">Child</strong> on the North Pole Nice List!
+      </p>
+
+      <div class="cert-canvas-wrap">
+        <canvas id="certCanvas" width="1200" height="850"></canvas>
+      </div>
+
+      <!-- Unlock Diploma Box ($1.00 USD) -->
+      <div id="unlockDiplomaBox" style="display:none;background:rgba(245,196,81,0.08);border:2px solid var(--gold);border-radius:14px;padding:18px;max-width:520px;width:100%;margin:14px auto;text-align:center;">
+        <h3 style="color:var(--gold);font-family:'Cinzel',serif;font-size:18px;margin-bottom:6px;">
+          📜 Unlock Official Printable Diploma ($1.00 USD)
+        </h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">
+          Get the high-resolution, watermark-free Official North Pole Diploma signed by Santa Claus to print and frame!
+        </p>
+        <div id="diploma-paypal-container" style="max-width:320px;margin:0 auto;min-height:50px;"></div>
+      </div>
+
+      <div class="cert-actions">
+        <button type="button" class="btn-download" id="downloadCertBtn" style="display:none;">
+          📥 Download Official Certificate (PNG)
+        </button>
+        <button type="button" class="btn-share" id="shareWhatsappBtn">
+          💬 Share on WhatsApp
+        </button>
+        <button type="button" class="btn-share" style="background:#475569;" id="callAgainBtn">
+          🎅 Call Again / New Child
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Source Code Protection Shield
+    (function() {
+      document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, { capture: true });
+      document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123 || ((e.ctrlKey || e.metaKey) && (e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67) || e.keyCode === 85 || e.keyCode === 83))) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, { capture: true });
+      document.addEventListener('dragstart', function(e) { e.preventDefault(); return false; }, { capture: true });
+      try {
+        const noop = function() {};
+        ['log', 'info', 'warn', 'debug', 'table'].forEach(function(m) { window.console[m] = noop; });
+      } catch(e) {}
+    })();
+
+    // Background Holiday Music (Jingle Bells Chimes)
+    let audioCtx = null;
+    let bgMusicPlaying = false;
+    function startHolidayMusic() {
+      try {
+        if (bgMusicPlaying) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        audioCtx = new AudioContext();
+        bgMusicPlaying = true;
+
+        const NOTES = { 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99 };
+        const SCORE = [
+          { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.58 },
+          { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.58 },
+          { n: 'E5', d: 0.28 }, { n: 'G5', d: 0.28 }, { n: 'C5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'E5', d: 1.1 },
+          { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 }, { n: 'F5', d: 0.28 },
+          { n: 'F5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'D5', d: 0.28 }, { n: 'E5', d: 0.28 }, { n: 'D5', d: 0.58 }, { n: 'G5', d: 0.58 }
+        ];
+
+        function playLoop() {
+          if (!bgMusicPlaying || !audioCtx) return;
+          let t = audioCtx.currentTime + 0.1;
+          SCORE.forEach(item => {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(NOTES[item.n], t);
+            g.gain.setValueAtTime(0.001, t);
+            g.gain.linearRampToValueAtTime(0.045, t + 0.03); // very gentle background level
+            g.gain.exponentialRampToValueAtTime(0.0001, t + item.d * 0.9);
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + item.d);
+            t += item.d;
+          });
+          setTimeout(playLoop, (t - audioCtx.currentTime) * 1000 + 1500);
+        }
+        playLoop();
+      } catch(e) {}
+    }
+
+    function stopHolidayMusic() {
+      bgMusicPlaying = false;
+      if (audioCtx) {
+        try { audioCtx.close(); } catch(e) {}
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const childName = params.get('name') || 'Oliver';
+    const childAge = params.get('age') || '';
+    const topic = params.get('topic') || 'good_behavior';
+    let isCertUnlocked = params.get('cert') === '1' || params.get('plan') === 'bundle' || params.get('plan') === 'sibling' || params.get('demo') === '1';
+
+    const ringingScreen = document.getElementById('ringingScreen');
+    const activeScreen = document.getElementById('activeScreen');
+    const certificateScreen = document.getElementById('certificateScreen');
+    const speechBubble = document.getElementById('speechBubble');
+    const santaMouth = document.getElementById('santaMouth');
+    const callTimer = document.getElementById('callTimer');
+    const goldenToast = document.getElementById('goldenToast');
+    const goldenName = document.getElementById('goldenName');
+
+    goldenName.textContent = childName;
+
+    // Dialogue sequence in English tailored for child and topic
+    let topicPraise = "You have been so kind, sharing with everyone and being so good this year!";
+    let topicAudioKey = 'good_behavior';
+    if (topic === 'school_grades') {
+      topicPraise = "The elves told me how hard you worked at school and how proud your family is!";
+      topicAudioKey = 'school_grades';
+    } else if (topic === 'tidy_room') {
+      topicPraise = "I heard you have been keeping your room so tidy and helping out so wonderfully!";
+      topicAudioKey = 'tidy_room';
+    } else if (topic === 'healthy_eating') {
+      topicPraise = "Mrs. Claus told me you have been eating all your healthy meals to grow big and strong!";
+      topicAudioKey = 'healthy_eating';
+    } else if (topic === 'christmas_wish') {
+      topicPraise = "The elves in my workshop are getting all the toys ready for Christmas!";
+      topicAudioKey = 'christmas_wish';
+    }
+
+    let currentTurn = 0;
+    let timerSeconds = 120; // Full 2-minute call! No free preview.
+    let timerInterval = null;
+
+    // Dedicated HTMLAudioElement for Santa's voice (100% Mobile & Safari Compatible)
+    const santaVoicePlayer = new Audio();
+    santaVoicePlayer.preload = 'auto';
+
+    function playSantaAudio(src, text, onFinished) {
+      speechBubble.textContent = text;
+      santaMouth.classList.add('talking');
+      const micEl = document.getElementById('micStatus');
+      if (micEl) micEl.textContent = '🎅 Santa is speaking...';
+
+      let finished = false;
+      function done() {
+        if (finished) return;
+        finished = true;
+        santaMouth.classList.remove('talking');
+        if (onFinished) onFinished();
+      }
+
+      santaVoicePlayer.src = src;
+      santaVoicePlayer.currentTime = 0;
+      santaVoicePlayer.onended = done;
+      santaVoicePlayer.onerror = done;
+
+      const playPromise = santaVoicePlayer.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          setTimeout(done, 4000);
+        });
+      }
+
+      // Safety timeout: advance dialogue if audio stalls
+      setTimeout(done, 15000);
+    }
+
+    // High-Sensitivity Voice & Tap Listener (Multi-Layer Engine)
+    let activeSpeechRecognition = null;
+    let latestChildHeard = '';
+    let isSantaListening = false;
+
+    function startSpeechEngine() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return;
+
+      try {
+        if (activeSpeechRecognition) {
+          try { activeSpeechRecognition.abort(); } catch(e) {}
+        }
+        activeSpeechRecognition = new SpeechRec();
+        activeSpeechRecognition.continuous = true;
+        activeSpeechRecognition.interimResults = true; // Instant real-time syllable recognition!
+        activeSpeechRecognition.maxAlternatives = 3;
+
+        activeSpeechRecognition.onresult = (e) => {
+          let interim = '';
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+              final += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          const spoken = (final || interim).trim();
+          if (spoken && isSantaListening && typeof window._onChildSpoke === 'function') {
+            window._onChildSpoke(spoken);
+          }
+        };
+
+        activeSpeechRecognition.onerror = () => {};
+
+        activeSpeechRecognition.onend = () => {
+          // Keep recognition alive while Santa is listening
+          if (isSantaListening) {
+            try { activeSpeechRecognition.start(); } catch(e) {}
+          }
+        };
+
+        try { activeSpeechRecognition.start(); } catch(e) {}
+      } catch(e) {}
+    }
+
+    function listenToChild(promptText, quickChips, maxWaitMs, onDone) {
+      isSantaListening = true;
+      santaMouth.classList.remove('talking');
+      startSpeechEngine();
+
+      speechBubble.innerHTML = `🎙️ <strong style="color:#fff">${promptText}</strong><br><span style="font-size:12px;color:var(--gold);margin-top:4px;display:inline-block;">👂 Speak to Santa or tap your answer below:</span>`;
+      const micEl = document.getElementById('micStatus');
+      if (micEl) micEl.innerHTML = '<span style="color:#22c55e;animation:pulse 1s infinite;">🟢 🎙️ Santa is listening to you right now...</span>';
+
+      const chipsBox = document.getElementById('quickAnswers');
+      chipsBox.innerHTML = '';
+      if (quickChips && quickChips.length > 0) {
+        quickChips.forEach(chipText => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chip-btn';
+          btn.textContent = chipText;
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleHeard(chipText);
+          });
+          chipsBox.appendChild(btn);
+        });
+        chipsBox.style.display = 'flex';
+      }
+
+      latestChildHeard = '';
+      let timer = null;
+      let completed = false;
+
+      function handleHeard(text) {
+        if (completed) return;
+        latestChildHeard = text;
+        speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold);font-size:16px;">"${text}"</strong>`;
+        chipsBox.style.display = 'none';
+        clearTimeout(timer);
+        timer = setTimeout(finishListening, 1200);
+      }
+
+      function finishListening() {
+        if (completed) return;
+        completed = true;
+        isSantaListening = false;
+        clearTimeout(timer);
+        chipsBox.style.display = 'none';
+
+        if (latestChildHeard) {
+          speechBubble.innerHTML = `👂 Santa heard: <strong style="color:var(--gold);font-size:16px;">"${latestChildHeard}"</strong>`;
+          setTimeout(() => { onDone(latestChildHeard); }, 1000);
+        } else {
+          onDone('');
+        }
+      }
+
+      timer = setTimeout(finishListening, maxWaitMs);
+
+      window._onChildSpoke = function(transcript) {
+        handleHeard(transcript);
+      };
+    }
+
+    // Answer Call Handler (Single clean click for mobile touch and desktop)
+    const answerBtn = document.getElementById('answerBtn');
+    let callAnswered = false;
+
+    function handleAnswerCall() {
+      if (callAnswered) return;
+      callAnswered = true;
+
+      // Resume AudioContext if suspended (required for iOS Safari)
+      try {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch(err) {}
+
+      ringingScreen.style.display = 'none';
+      activeScreen.classList.add('active');
+
+      try { startHolidayMusic(); } catch(err) {}
+      startCallTimer();
+      startInteractiveCall();
+    }
+
+    if (answerBtn) {
+      answerBtn.addEventListener('click', handleAnswerCall);
+    }
+
+    function startCallTimer() {
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        const m = Math.floor(timerSeconds / 60);
+        const s = timerSeconds % 60;
+        callTimer.textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+
+        if (timerSeconds === 90) {
+          goldenToast.style.display = 'inline-flex';
+        }
+
+        if (timerSeconds <= 0) {
+          endCall();
+        }
+      }, 1000);
+    }
+
+    // Interactive Santa Phone Call Sequence
+    function startInteractiveCall() {
+      // Step 0: YouTube Authentic Ho Ho Ho + Warm Santa Greeting
+      playSantaAudio('/santa/assets/santa-ho-ho-ho.mp3', "🎅 HO HO HO! Merry Christmas!", () => {
+        playSantaAudio('/santa/assets/santa-call-q0-greeting.mp3', `Ho ho ho! Well hello there, ${childName}! Merry Christmas! Santa Claus is so happy to hear your cheerful voice all the way from the North Pole!`, () => {
+          step1_listenAllYear();
+        });
+      });
+    }
+
+    // Step 1: Did you listen & behave all year? (User: "či posluchali celý rok")
+    function step1_listenAllYear() {
+      playSantaAudio('/santa/assets/santa-call-q1-listen-all-year.mp3', "Tell me, my dear friend, have you been good and listened to your parents all year long? Tell Santa, I am listening!", () => {
+        const chips = ["⭐ Yes, I was very good!", "😇 I listened to parents!", "💖 I tried my best!"];
+        listenToChild("Have you been good and listened all year?", chips, 6500, () => {
+          playSantaAudio('/santa/assets/santa-call-r1-listen-reaction.mp3', "Ho ho ho! That is music to my ears! The elves and Mrs. Claus always smile when children try their very best to be good and kind!", () => {
+            step2_gifts();
+          });
+        });
+      });
+    }
+
+    // Step 2: What presents/gifts do you want? (User: "a čo chcu dostat aké darčeky")
+    function step2_gifts() {
+      playSantaAudio('/santa/assets/santa-call-q2-gifts.mp3', "Now tell me, what special gifts or presents are you wishing to get for Christmas this year? Tell Santa all about them!", () => {
+        const chips = ["🧸 Toys & Lego!", "🎮 Video Game / Console!", "🚲 Bicycle / Scooter!", "🎁 Surprise Me!"];
+        listenToChild("What gifts are you wishing to get for Christmas?", chips, 7000, () => {
+          playSantaAudio('/santa/assets/santa-call-r2-gifts-reaction.mp3', "Ho ho ho! That sounds like a truly magical Christmas wish! My workshop elves are working extra hard right now making all the wonderful toys!", () => {
+            step3_festiveFood();
+          });
+        });
+      });
+    }
+
+    // Step 3: What do you like to eat at Christmas? (User: "a čo radi jedia na vianoce")
+    function step3_festiveFood() {
+      playSantaAudio('/santa/assets/santa-call-q3-festive-food.mp3', "And tell me, what is your favorite festive food or sweet treat to eat at Christmas time? Cookies, gingerbread, or a yummy holiday dinner?", () => {
+        const chips = ["🍪 Cookies & Milk!", "🍫 Sweet Chocolate!", "🍗 Yummy Holiday Dinner!", "🧁 Gingerbread!"];
+        listenToChild("What is your favorite festive food or sweet treat?", chips, 6500, () => {
+          playSantaAudio('/santa/assets/santa-call-r3-food-reaction.mp3', "Mmm, that sounds absolutely delicious! Mrs. Claus and I love sweet Christmas treats too! And Rudolph the red-nosed reindeer always loves a crunchy carrot snack!", () => {
+            step4_loveMost();
+          });
+        });
+      });
+    }
+
+    // Step 4: What do you love most about Christmas? (User: "a čo maju na vianociach najradsej")
+    function step4_loveMost() {
+      playSantaAudio('/santa/assets/santa-call-q4-love-most.mp3', "And tell me, my dear friend, what do you love the very most about Christmas time? The glistening snow, decorating the Christmas tree, or being with family?", () => {
+        const chips = ["❄️ Snow & Snowmen!", "🎄 Christmas Tree Lights!", "👨‍👩‍👧 Family Warmth & Hugs!", "🎁 Opening Presents!"];
+        listenToChild("What do you love most about Christmas time?", chips, 6500, () => {
+          playSantaAudio('/santa/assets/santa-call-r4-love-reaction.mp3', "Ho ho ho! Being together with family, sharing warm hugs, and feeling the holiday love is truly the most magical part of Christmas in the whole world!", () => {
+            step5_songPoem();
+          });
+        });
+      });
+    }
+
+    // Step 5: Christmas poem or song? (User: "či poznaju nejaku vianocnu basnicku a ze ci by mu kusok zaspievali")
+    function step5_songPoem() {
+      playSantaAudio('/santa/assets/santa-call-q5-song-poem.mp3', "Say, do you know a little Christmas poem, or could you sing Santa a little piece of a Christmas song? Like Jingle Bells? Santa would love to hear you sing or recite a little poem!", () => {
+        const chips = ["🎵 Jingle Bells, Jingle Bells!", "⭐ Twinkle Twinkle Little Star!", "📜 A little Christmas Poem!"];
+        listenToChild("Sing a song or recite a Christmas poem for Santa!", chips, 8000, () => {
+          playSantaAudio('/santa/assets/santa-call-r5-song-reaction.mp3', "Ho ho ho! Bravo! That was simply wonderful! That brought so much Christmas cheer all the way to the North Pole!", () => {
+            step6_farewellMilkCookie();
+          });
+        });
+      });
+    }
+
+    // Step 6: Farewell, visit promise, and glass of milk & cookie on table! (User: "ze ich urcite pride tento rok navstivit a ze dufa ze si najde pohar mlieka a susienku na stole")
+    function step6_farewellMilkCookie() {
+      playSantaAudio('/santa/assets/santa-call-q6-farewell-milk-cookie.mp3', "You have been such a joy to speak with! I want to tell you a secret: I will definitely come visit your home this Christmas! Make sure to go to sleep early on Christmas Eve, and I really hope I will find a cold glass of milk and a yummy cookie on the table for old Santa! I am now awarding you your Official North Pole Nice List Certificate! Goodbye, my dear friend, and Merry Christmas to you and your whole family! Ho ho ho!", () => {
+        setTimeout(endCall, 2000);
+      });
+    }
+
+    document.getElementById('endCallBtn').addEventListener('click', endCall);
+
+    function endCall() {
+      clearInterval(timerInterval);
+      stopHolidayMusic();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      activeScreen.classList.remove('active');
+      certificateScreen.classList.add('active');
+      document.getElementById('certChildName').textContent = childName;
+
+      renderCertificate();
+      updateDiplomaUI();
+    }
+
+    function updateDiplomaUI() {
+      const downloadBtn = document.getElementById('downloadCertBtn');
+      const unlockBox = document.getElementById('unlockDiplomaBox');
+
+      if (isCertUnlocked) {
+        if (downloadBtn) downloadBtn.style.display = 'inline-flex';
+        if (unlockBox) unlockBox.style.display = 'none';
+      } else {
+        if (downloadBtn) downloadBtn.style.display = 'none';
+        if (unlockBox) unlockBox.style.display = 'block';
+        renderDiplomaPayPal();
+      }
+    }
+
+    let diplomaPpRendered = false;
+    function renderDiplomaPayPal() {
+      if (diplomaPpRendered) return;
+      const container = document.getElementById('diploma-paypal-container');
+      if (!container || !window.paypal) return;
+      diplomaPpRendered = true;
+
+      window.paypal.Buttons({
+        style: { layout: 'horizontal', color: 'gold', shape: 'pill', label: 'paypal', height: 44 },
+        createOrder: function(data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              description: `Official North Pole Diploma for ${childName}`,
+              amount: { currency_code: 'USD', value: '1.00' }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            fetch('/api/webhooks/paypal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: details.id,
+                event_type: 'PAYMENT.CAPTURE.COMPLETED',
+                summary: `Diploma Unlock ($1.00) - ${childName}`,
+                amount: 1.00,
+                currency: 'USD',
+                payerEmail: details.payer?.email_address,
+                status: 'COMPLETED',
+                raw: { orderId: data.orderID, captureId: details.id, childName: childName, item: 'diploma' }
+              })
+            }).catch(() => {});
+
+            isCertUnlocked = true;
+            renderCertificate();
+            updateDiplomaUI();
+
+            // Auto-download unlocked certificate
+            const c = document.getElementById('certCanvas');
+            const a = document.createElement('a');
+            a.download = `Santa-Nice-List-Diploma-${childName.replace(/\s+/g, '_')}.png`;
+            a.href = c.toDataURL('image/png');
+            a.click();
+          });
+        },
+        onError: function() {
+          alert("Payment could not be completed. Please try again.");
+        }
+      }).render('#diploma-paypal-container');
+    }
+
+    // Render Nice List Certificate onto Canvas
+    function renderCertificate() {
+      const c = document.getElementById('certCanvas');
+      const g = c.getContext('2d');
+
+      // Parchment gradient background
+      const bgGrad = g.createLinearGradient(0, 0, c.width, c.height);
+      bgGrad.addColorStop(0, '#fffbf0');
+      bgGrad.addColorStop(1, '#fdeece');
+      g.fillStyle = bgGrad;
+      g.fillRect(0, 0, c.width, c.height);
+
+      // Gold & Burgundy ornate borders
+      g.strokeStyle = '#c41e3a';
+      g.lineWidth = 14;
+      g.strokeRect(30, 30, c.width - 60, c.height - 60);
+
+      g.strokeStyle = '#d4af37';
+      g.lineWidth = 4;
+      g.strokeRect(46, 46, c.width - 92, c.height - 92);
+
+      // Header
+      g.textAlign = 'center';
+      g.fillStyle = '#1e293b';
+      g.font = '700 32px "Cinzel", serif';
+      g.fillText('NORTH POLE HEADQUARTERS · OFFICIAL DIPLOMA', c.width / 2, 120);
+
+      g.fillStyle = '#c41e3a';
+      g.font = '900 64px "Cinzel", serif';
+      g.fillText('OFFICIAL NICE LIST CERTIFICATE', c.width / 2, 200);
+
+      // Subhead
+      g.fillStyle = '#334155';
+      g.font = 'italic 28px "Georgia", serif';
+      g.fillText('This is to certify that Santa Claus and the Elves have proudly placed', c.width / 2, 275);
+
+      // Child Name in Calligraphy
+      g.fillStyle = '#c41e3a';
+      g.font = 'bold 84px "Great Vibes", cursive';
+      g.fillText(childName, c.width / 2, 385);
+
+      // Decorative Line
+      g.strokeStyle = '#d4af37';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(350, 420);
+      g.lineTo(850, 420);
+      g.stroke();
+
+      // Body description
+      g.fillStyle = '#1e293b';
+      g.font = '500 28px "Inter", sans-serif';
+      g.fillText('on Santa\'s Official Nice List for Christmas 2026', c.width / 2, 480);
+
+      g.font = '400 22px "Inter", sans-serif';
+      g.fillStyle = '#64748b';
+      g.fillText('Having shown exceptional kindness, a joyful heart, and holiday spirit.', c.width / 2, 530);
+
+      // Golden Wax Seal circle
+      g.fillStyle = '#b8860b';
+      g.beginPath();
+      g.arc(280, 680, 60, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#f5c451';
+      g.lineWidth = 4;
+      g.stroke();
+
+      g.fillStyle = '#ffffff';
+      g.font = 'bold 15px "Cinzel", serif';
+      g.fillText('OFFICIAL', 280, 672);
+      g.fillText('SEAL', 280, 692);
+
+      // Signatures
+      g.fillStyle = '#0f172a';
+      g.font = 'bold 52px "Great Vibes", cursive';
+      g.fillText('Santa Claus', 920, 680);
+
+      g.font = '600 16px "Inter", sans-serif';
+      g.fillStyle = '#64748b';
+      g.fillText('SANTA CLAUS, NORTH POLE', 920, 715);
+
+      // Date or Watermark
+      if (!isCertUnlocked) {
+        g.fillStyle = 'rgba(196, 30, 58, 0.12)';
+        g.fillRect(60, 740, c.width - 120, 46);
+        g.fillStyle = '#c41e3a';
+        g.font = 'bold 19px "Cinzel", serif';
+        g.fillText('OFFICIAL DIPLOMA PREVIEW · UNLOCK FOR $1.00 USD TO PRINT', c.width / 2, 770);
+      } else {
+        const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        g.fillText(`DATE: ${dateStr}`, c.width / 2, 770);
+      }
+    }
+
+    // Download Certificate
+    document.getElementById('downloadCertBtn').addEventListener('click', () => {
+      const c = document.getElementById('certCanvas');
+      const a = document.createElement('a');
+      a.download = `Santa-Nice-List-Certificate-${childName.replace(/\s+/g, '_')}.png`;
+      a.href = c.toDataURL('image/png');
+      a.click();
+    });
+
+    // Share on WhatsApp
+    document.getElementById('shareWhatsappBtn').addEventListener('click', () => {
+      const shareText = `🎄 My child ${childName} just had a magical live video call with Santa Claus and received their Official Nice List Certificate! You can try it here: https://${window.location.host}/santa`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+    });
+
+    document.getElementById('callAgainBtn').addEventListener('click', () => {
+      window.location.href = '/santa';
+    });
+  </script>
+</body>
+</html>

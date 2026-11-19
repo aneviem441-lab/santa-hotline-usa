@@ -1,0 +1,12 @@
+{
+  "name": "santa-hotline-usa",
+  "version": "1.0.0",
+  "description": "Santa's Live North Pole Hotline - USA & International Edition",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
